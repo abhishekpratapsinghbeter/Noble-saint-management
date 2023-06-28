@@ -1,0 +1,16 @@
+@media print {
+    @page {
+      size: A4; /* Set the page size to auto */
+      margin: 0; /* Remove default margins */
+    }
+  
+    body {
+      margin:5%; /* Remove default body margin */
+    }
+  
+    #rdiv {
+      padding-top: 2; /* Remove top padding */
+      padding-bottom: 2; /* Remove bottom padding */
+      color:black
+    }
+  }
