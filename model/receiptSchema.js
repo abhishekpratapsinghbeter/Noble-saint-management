@@ -35,6 +35,10 @@ const receiptSchema= new mongoose.Schema({
         type:String,
         required:true
     },
+    isSystemGenerated: {
+        type: Boolean,
+        default: false,
+      },
     
     user:{type:mongoose.Types.ObjectId,ref:"MEMBER",required:true},
 });

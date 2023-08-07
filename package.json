@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "nodemon --experimental-modules --es-module-specifier-resolution=node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,15 +16,17 @@
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "heroku": "^8.1.9",
+    "firebase": "^8.10.1",
+    "firebase-admin": "^11.10.1",
     "jsonwebtoken": "^9.0.0",
     "moment": "^2.29.4",
     "mongodb": "^5.1.0",
     "mongoose": "^6.9.0",
-    "mysql2": "^3.0.1",
-    "nodemon": "^2.0.20"
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^3.0.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "electron": "^25.1.1"
+    
   }
 }

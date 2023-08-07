@@ -16,11 +16,9 @@ const memberSchema= new mongoose.Schema({
     },
     photo:{
         type:String,
-        required:true
     },
     fdocument:{
         type:String,
-        required:true
     },
     bdocument:{
         type:String,
@@ -85,6 +83,10 @@ const memberSchema= new mongoose.Schema({
         type:Boolean,
         default:true
     },
+    version: {
+        type: Number,
+        default: 1,
+      },
     receipt:[{type:mongoose.Types.ObjectId,ref:"RECEIPT",required:true}],
     
 })

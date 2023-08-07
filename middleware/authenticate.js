@@ -2,7 +2,7 @@ const jwt= require('jsonwebtoken');
 const Member = require('../model/memberSchema');
 const Receipt = require('../model/receiptSchema');
 const Branch = require('../model/branchSchema');
-import ("../router/auth")
+
 const Userauth =require("../model/userauth")
 ;
 const User = require('../model/userSchema');
@@ -18,7 +18,7 @@ const Authenticate = async (req,res,next) =>{
         const rootUser = await Userauth.findOne({_id: verifyToken._id, "tokens.token": token});
         let rootUser1,rootUser2,rootUse1,rootUser3,activeMembers,rootUser8,rootUser9,rootUser4,rootUser7,rootUser6,rootUser5;
         if (rootUser) {
-            rootUser1 = await Member.find();
+            rootUser1 = await Member.find().populate('receipt');
             rootUser2 = await User.find();
             rootUse1 = await Branch.find();
             rootUser3 = await Receipt.find().populate('user');

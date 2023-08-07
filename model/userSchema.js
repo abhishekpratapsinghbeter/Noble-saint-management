@@ -19,11 +19,11 @@ const userSchema= new mongoose.Schema({
         type:String,
         required:true
     },
-    document:{
+    fdocument:{
         type:String,
         required:true
     },
-    ndocument:{
+    bdocument:{
         type:String
     },
     gender:{
@@ -72,7 +72,6 @@ const userSchema= new mongoose.Schema({
     },
     econtactn2:{
         type:String,
-        required:true
     },
     relation1:{
         type:String,
@@ -81,7 +80,6 @@ const userSchema= new mongoose.Schema({
     
     relation2:{
         type:String,
-        required:true
     },
     
     econtact1:{
@@ -90,7 +88,6 @@ const userSchema= new mongoose.Schema({
     },
     econtact2:{
         type:Number,
-        required:true
     }, 
     user:[{type:mongoose.Types.ObjectId,ref:"USERAUTH",required:true}] 
 })
