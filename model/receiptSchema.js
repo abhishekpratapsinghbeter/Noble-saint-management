@@ -31,6 +31,14 @@ const receiptSchema= new mongoose.Schema({
         type:String,
         required:true
     },
+    calculatedps:{
+        type:String,
+        required:true
+    },
+    paymentM:{
+        type:String,
+        required:true
+    },
     fees:{
         type:String,
         required:true

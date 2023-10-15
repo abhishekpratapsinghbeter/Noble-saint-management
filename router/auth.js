@@ -84,31 +84,32 @@ router.post('/form',async(req,res)=>{
 
 //########################################################################################### Receipt form ##########################################################################################################################################################
 router.post('/receipt', async (req, res) => {
-  const { membershipno, serial, ped, dop, fees } = req.body;
+  const { membershipno, serial, ped, dop, fees ,packagestart,paymentM} = req.body;
   if (!membershipno || !dop) {
     return res.status(422).json({ error: "Please fill all the required fields" });
   } 
-
   try {
     const userExist = await Member.findOne({ membership: membershipno });
+    const user = userExist._id;
     if (!userExist) {
       return res.status(422).json({ error: "Membership not found" });
     }
-    
-    const user = userExist._id;
-    let pkg = "";
     switch (fees) {
       case "700":
       case "800":
+      case "1000":
         pkg = "Monthly";
         break;
+      case "2300":
       case "2100":
         pkg = "Quaterly";
         break;
+      case "4000":
       case "3800":
         pkg = "Half Yearly";
         break;
       case "7000":
+      case "7200":
         pkg = "Yearly";
         break;
       default:
@@ -119,7 +120,7 @@ router.post('/receipt', async (req, res) => {
     const branch = await Branch.findOne({ba:branchName})// Replace 'branch1' and 'branch2' with your actual branch names or codes
     const branchCode = branch ? branch.bcode : '01'; // Use the branch code if found, or use a default value ('01') if not found
     const latestReceipt = await Receipt.findOne({ isSystemGenerated: true }).sort({ sno: -1 }).limit(1);
-    const latestReceipt1 = await Receipt.findOne({ isSystemGenerated: false }).sort({ sno: -1 }).limit(1);
+    const latestReceipt1 = await Receipt.findOne().sort({ id: -1 }).limit(1);
     let sno;
     let id;
     let isSystemGenerated = false; // Initialize the flag for system-generated receipt
@@ -134,36 +135,59 @@ router.post('/receipt', async (req, res) => {
         id = latestReceipt1 ? latestReceipt1.id + 1 : 1;
       }
     } else {
-      
       if (latestReceipt) {
         const lastSno = parseInt(latestReceipt.sno.slice(-4), 10);  // Extract the last 4 digits of the sno
         sno = `${currentYear}${branchCode}${(lastSno + 1).toString().padStart(4, '0')}`;
         isSystemGenerated = true; // The generated serial number is system-generated
-        id = latestReceipt ? latestReceipt.id + 1 : 1;
+        id = latestReceipt1 ? latestReceipt1.id + 1 : 1;
       } else {
         sno = `${currentYear}${branchCode}0001`;
-        id = latestReceipt ? latestReceipt.id + 1 : 1;
+        id = latestReceipt1 ? latestReceipt1.id + 1 : 1;
+         isSystemGenerated = true;
       }
     }
-    
+    let p;
+    let calculatedps;
     const pd = ped ? ped : 0;
-
     const repaymentInterval = pkg === 'Monthly' ? 1 : pkg === 'Quaterly' ? 3 : pkg === 'Half Yearly' ? 6 : 12;
 
-    const dorp1 = moment(dop, 'DD-MM-YYYY').add(repaymentInterval, 'months').format('DD-MM-YYYY');
+    const currentMonth = moment().format('MM'); // Get the current month (two-digit)
+    const currentyear = moment().format('YYYY'); 
+    if (userExist.receipt.length === 0) {
+      // If this is the first receipt for the member, set package start date to their date of joining (doj)
+      const joining = moment(userExist.doj, 'DD-MM-YYYY');
+        const packageStartDay = joining.format('DD');
+        p = `${packageStartDay}-${currentMonth}-${currentyear}`; // Assuming 'doj' is the date of joining property in the Member model
+      } else {
+        const lastReceiptId = userExist.receipt[userExist.receipt.length - 1]; // Get the ObjectId of the last receipt
+        const lastReceipt = await Receipt.findById(lastReceiptId); // Fetch the last receipt using its ObjectId
+        if (lastReceipt) {
+          const lastDorpDate = moment(lastReceipt.dorp, 'DD-MM-YYYY');
+          const packageStartDay = lastDorpDate.format('DD');
+          p = `${packageStartDay}-${currentMonth}-${currentyear}`;
+        }}
+    if (packagestart) {
+      calculatedps = packagestart;
+    } else {
+      // Use the 'p' value calculated based on the last 'dorp'
+      calculatedps = p;
+    }
+    
+    const dorp1 = moment(calculatedps, 'DD-MM-YYYY').add(repaymentInterval, 'months').format('DD-MM-YYYY');
     const dorp = dorp1.toString();
     
     // Save the receipt with the isSystemGenerated flag
-    const receipt = new Receipt({ user, id, pd, sno, pkg, membershipno, dop, dorp, fees, isSystemGenerated });
+    
+    const receipt = new Receipt({ user, id, pd, sno, pkg, membershipno, calculatedps,dop, dorp,paymentM, fees, isSystemGenerated });
     await receipt.save();
     userExist.receipt.push(receipt);
     await userExist.save();
     res.status(201).json({ message: "Receipt registered successfully", receiptId: receipt._id });
-  } catch (err) {
-    console.error(err);
+  } 
+  catch (err) {
     res.status(500).json({ error: "An error occurred while saving the receipt" });
-  }
-});    
+    console.error(err)
+}});    
 //####################################################################################################################################################################################################################################################################################
 
 
@@ -174,7 +198,7 @@ router.post('/receipt', async (req, res) => {
 
 //########################################################################################### new Receipt form ##########################################################################################################################################################
 router.post('/nreceipt', async (req, res) => {
-  const { member, pkg,ped, dop, fees } = req.body;
+  const { member,ped, dop, fees ,packagestart,paymentM} = req.body;
   if (!member || !dop) {
     return res.status(422).json({ error: "Please fill all the required fields" });
   } 
@@ -182,6 +206,22 @@ router.post('/nreceipt', async (req, res) => {
     const userExist = await Member.findOne({ membership:member });
     if (!userExist) {
       return res.status(422).json({ error: "Membership not found" });
+    }
+    switch (fees) {
+      case "1000":
+        pkg = "Monthly";
+        break;
+      case "2300":
+        pkg = "Quaterly";
+        break;
+      case "4000":
+        pkg = "Half Yearly";
+        break;
+      case "7200":
+        pkg = "Yearly";
+        break;
+      default:
+        return res.status(422).json({ error: "Invalid fees value" });
     }
     const user = await userExist._id
     const latestReceipt = await Receipt.findOne().sort({ sno: -1 }).limit(1);
@@ -200,12 +240,34 @@ router.post('/nreceipt', async (req, res) => {
     const id = latestReceipt1 ? latestReceipt.id + 1 : 1;
   const pd = ped ? ped : 0;
 
-    const package = req.body.pkg;
-    const repaymentInterval = package === 'Monthly' ? 1 : package === 'Quaterly' ? 3 : package === 'HalfYearly' ? 6 : 12;
-    const dorp1 = moment().add(repaymentInterval, 'months').format('DD-MM-YYYY');
-    const dorp= dorp1.toString();
+    const repaymentInterval = pkg === 'Monthly' ? 1 : pkg === 'Quaterly' ? 3 : pkg === 'Half Yearly' ? 6 : 12;
 
-    const receipt = new Receipt({user, id, pd,sno,pkg, membershipno:member, dop, dorp, fees });
+    const currentMonth = moment().format('MM'); // Get the current month (two-digit)
+    const currentyear = moment().format('YYYY'); 
+    if (userExist.receipt.length === 0) {
+      // If this is the first receipt for the member, set package start date to their date of joining (doj)
+      const joining = moment(userExist.doj, 'DD-MM-YYYY');
+        const packageStartDay = joining.format('DD');
+        p = `${packageStartDay}-${currentMonth}-${currentyear}`; // Assuming 'doj' is the date of joining property in the Member model
+      } else {
+        const lastReceiptId = userExist.receipt[userExist.receipt.length - 1]; // Get the ObjectId of the last receipt
+        const lastReceipt = await Receipt.findById(lastReceiptId); // Fetch the last receipt using its ObjectId
+        if (lastReceipt) {
+          const lastDorpDate = moment(lastReceipt.dorp, 'DD-MM-YYYY');
+          const packageStartDay = lastDorpDate.format('DD');
+          p = `${packageStartDay}-${currentMonth}-${currentyear}`;
+        }}
+    if (packagestart) {
+      calculatedps = packagestart;
+    } else {
+      // Use the 'p' value calculated based on the last 'dorp'
+      calculatedps = p;
+    }
+    
+    const dorp1 = moment(calculatedps, 'DD-MM-YYYY').add(repaymentInterval, 'months').format('DD-MM-YYYY');
+    const dorp = dorp1.toString();
+    
+    const receipt = new Receipt({user, id, pd,sno,pkg, membershipno:member,paymentM,calculatedps, packagestart,dop, dorp, fees });
     await receipt.save();
     userExist.receipt.push(receipt);
     await userExist.save();
@@ -378,7 +440,6 @@ try {
 router.put(`/receipt1/:id`, async (req, res) => {
   const id = req.params.id;
 const updateData = req.body;
-
 try {
   const user = await Receipt.findByIdAndUpdate(id, updateData, { new: true });
   res.send(user);
@@ -446,18 +507,25 @@ router.post('/',async (req,res)=>{
 
 //#######################################################################################################################################################################################################################################################################################################
 //################################################################################## DELETE Function ################################################################################################
-router.delete('/delete/:id',async(req,res)=>{
-    try {
-        const data = await Member.findByIdAndDelete(req.params.id);
-        if(data){
-            res.json({message:'Data deleted successfully'});
-        }else{
-            res.status(404).json({message:'Data not found'});
-        }
-    } catch (err) {
-        console.log(err)
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    // Step 1: Delete the member from the "member" collection
+    const deletedMember = await Member.findByIdAndDelete(req.params.id);
+
+    if (!deletedMember) {
+      return res.status(404).json({ message: 'Member not found' });
     }
-})
+
+    // Step 2: Delete all receipts that reference the deleted member
+    const deletedReceipts = await Receipt.deleteMany({ user: req.params.id });
+
+    res.json({ message: 'Member and associated receipts deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 router.delete('/delete2/:id',async(req,res)=>{
     try {
         const data = await User.findByIdAndDelete(req.params.id);
@@ -470,18 +538,34 @@ router.delete('/delete2/:id',async(req,res)=>{
         console.log(err)
     }
 })
-router.delete('/delete3/:id',async(req,res)=>{
+router.delete('/delete3/:id', async (req, res) => {
   try {
-      const data = await Receipt.findByIdAndDelete(req.params.id);
-      if(data){
-          res.json({message:'Data deleted successfully'});
-      }else{
-          res.status(404).json({message:'Data not found'});
-      }
+    // Step 1: Delete the receipt from the "receipt" collection
+    const deletedReceipt = await Receipt.findByIdAndDelete(req.params.id);
+
+    if (!deletedReceipt) {
+      return res.status(404).json({ message: 'Data not found' });
+    }
+
+    const memberId = deletedReceipt.user; 
+
+    const updatedMember = await Member.findByIdAndUpdate(
+      memberId,
+      { $pull: { receipt: req.params.id } },
+      { new: true }
+    );
+
+    if (!updatedMember) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+
+    res.json({ message: 'Data deleted successfully' });
   } catch (err) {
-      console.log(err)
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
   }
-})
+});
+
 //#################################################################################### Delete Data ends#########################################################################################################
 //##########################################################################################################################################################################################################
 
