@@ -64,5 +64,5 @@ For any inquiries or support, please contact:
 - 🔗 LinkedIn: [linkedin.com/in/abhishek-pratap-singh-88523a207](www.linkedin.com/in/abhishek-pratap-singh-88523a207)
 
 ---
-Made with ❤️ by **Noble Saint Team**.
+Made with ❤️ by **Abhishek Pratap Singh**.
 
